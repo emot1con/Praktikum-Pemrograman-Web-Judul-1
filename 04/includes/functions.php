@@ -102,7 +102,7 @@ function tambah_mahasiswa($npm, $nama, $program_studi, $angkatan, $email) {
     if (empty($npm) || empty($nama) || empty($program_studi) || empty($angkatan) || empty($email)) {
         return [
             'status' => false,
-            'message' => 'Semua kolom formulir wajib diisi!'
+            'message' => 'Semua kolom formulir wajib diisi'
         ];
     }
 
