@@ -129,9 +129,6 @@ const editEmail = document.getElementById('edit-email');
 async function openEditModal(id) {
     try {
         // Percobaan 6-3 Langkah 2
-        const response = await fetch(`${API_URL}?id=${id}`);
-        const result = await response.json();
-
         if (response.ok && result.data) {
                        
             // Percobaan 6-3 Langkah 3
