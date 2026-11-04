@@ -1,9 +1,11 @@
 /**
  * Praktikum 6: Komunikasi Data Asinkron Menggunakan AJAX & Fetch API
- * Sistem Informasi Data Mahasiswa (SIMA) - Waktu Praktikum: 90 Menit
+ * Sistem Informasi Data Mahasiswa (SIMA)
+ * Waktu Praktikum: 90 Menit
  */
 
-//Deklarasikan endpoint API 
+// Deklarasikan endpoint API
+const API_URL = 'api/mahasiswa.php';
 
 // 1. Seleksi Elemen DOM Utama
 const tabelBody = document.getElementById('tabel-body-mahasiswa');
@@ -13,55 +15,53 @@ const totalInfo = document.getElementById('total-mahasiswa-info');
 const formTambah = document.getElementById('form-tambah-mahasiswa');
 const alertBox = document.getElementById('alert-box');
 
-
-const API_URL = 'api/mahasiswa.php'
-
-
 // Helper: Menampilkan Pesan Notifikasi Dinamis
 function showAlert(message, type = 'success') {
-   if(!alertBox) return;
-   alertBox.textContent = message;
-   alertBox.className = `alert-box alert-${type}`;
-   alertBox.textContent = 'block';
+    if (!alertBox) return;
 
-   setTimeout(() => {
-    alertBox.style.display = 'none';
-   }, 4000);
-   
+    alertBox.textContent = message;
+    alertBox.className = `alert-box alert-${type}`;
+    alertBox.style.display = 'block';
+
+    setTimeout(() => {
+        alertBox.style.display = 'none';
+    }, 4000);
 }
 
 // 2. Fetch API GET: Mengambil Data Mahasiswa dari Server
 async function loadMahasiswa(keyword = '') {
 
-    // tampilkan indikator loading
+    // Tampilkan indikator loading tabel
     tabelBody.innerHTML = `
         <tr>
             <td colspan="8" style="text-align: center; padding: 20px; color: var(--text-muted);">
-            Memuat data dari server...
+                Memuat data dari server...
             </td>
         </tr>
     `;
 
     try {
+        // Susun URL request
+        const url = keyword
+            ? `${API_URL}?search=${encodeURIComponent(keyword)}`
+            : API_URL;
 
-        //Percobaan 6-1 Langkah 4 susun url request
-        const url = keyword ? `${API_URL}?search=${encodeURIComponent(keyword)}` : API_URL;
-
+        // Kirim request GET
         const response = await fetch(url);
-        if(!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
+
+        // Ekstrak response JSON
         const result = await response.json();
-        if(result.status === 'success'){
+
+        if (result.status === 'success') {
             renderTable(result.data, keyword);
-        }else{
+        } else {
             showAlert(result.message, 'danger');
         }
-        
-        //Percobaan 6-1 Langkah 4 kirim request
-        
-        //Percobaan 6-1 Langkah 4 kirim ekstrak json 
 
-      
     } catch (error) {
         tabelBody.innerHTML = `
             <tr>
@@ -75,11 +75,15 @@ async function loadMahasiswa(keyword = '') {
 
 // 3. Render Baris Tabel Dinamis ke DOM
 function renderTable(mahasiswaList = [], keyword = '') {
+
     tabelBody.innerHTML = '';
 
-    if (totalBadge) totalBadge.textContent = mahasiswaList.length;
+    if (totalBadge) {
+        totalBadge.textContent = mahasiswaList.length;
+    }
+
     if (totalInfo) {
-        totalInfo.textContent = keyword 
+        totalInfo.textContent = keyword
             ? `Ditemukan ${mahasiswaList.length} mahasiswa untuk "${keyword}"`
             : `Menampilkan ${mahasiswaList.length} mahasiswa`;
     }
@@ -96,29 +100,50 @@ function renderTable(mahasiswaList = [], keyword = '') {
     }
 
     mahasiswaList.forEach((mhs, index) => {
+
         const tr = document.createElement('tr');
+
         tr.innerHTML = `
             <td>${index + 1}</td>
             <td>
-                <img src="img/avatar-default.svg" alt="Foto ${mhs.nama}" class="avatar-img" width="36" height="36">
+                <img src="img/avatar-default.svg"
+                     alt="Foto ${mhs.nama}"
+                     class="avatar-img"
+                     width="36"
+                     height="36">
             </td>
             <td><strong>${mhs.npm}</strong></td>
             <td>${mhs.nama}</td>
             <td><span class="badge">${mhs.program_studi}</span></td>
             <td>${mhs.angkatan}</td>
-            <td><a href="mailto:${mhs.email}" class="link-email">${mhs.email}</a></td>
             <td>
-                <button type="button" class="btn btn-warning btn-sm" onclick="openEditModal(${mhs.id})">Edit</button>
-                <button type="button" class="btn btn-danger btn-sm" onclick="deleteMahasiswa(${mhs.id}, '${mhs.nama}')">Hapus</button>
+                <a href="mailto:${mhs.email}" class="link-email">
+                    ${mhs.email}
+                </a>
+            </td>
+            <td>
+                <button type="button"
+                        class="btn btn-warning btn-sm"
+                        onclick="openEditModal(${Number(mhs.id)})">
+                    Edit
+                </button>
+
+                <button type="button"
+                        class="btn btn-danger btn-sm"
+                        onclick="deleteMahasiswa(${Number(mhs.id)}, ${JSON.stringify(String(mhs.nama))})">
+                    Hapus
+                </button>
             </td>
         `;
+
         tabelBody.appendChild(tr);
     });
 }
 
-// Elemen DOM Modal Edit
+// 4. Elemen DOM Modal Edit
 const modalEdit = document.getElementById('modal-edit');
 const formEdit = document.getElementById('form-edit-mahasiswa');
+
 const editId = document.getElementById('edit-id');
 const editnpm = document.getElementById('edit-npm');
 const editNama = document.getElementById('edit-nama');
@@ -126,36 +151,69 @@ const editProdi = document.getElementById('edit-prodi');
 const editAngkatan = document.getElementById('edit-angkatan');
 const editEmail = document.getElementById('edit-email');
 
+// Membuka Modal Edit dan Mengambil Detail Mahasiswa
 async function openEditModal(id) {
+
     try {
-        // Percobaan 6-3 Langkah 2
-        if (response.ok && result.data) {
-                       
-            // Percobaan 6-3 Langkah 3
-            
+        // Ambil detail mahasiswa berdasarkan ID
+        const response = await fetch(`${API_URL}?id=${id}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.status === 'success' && result.data) {
+
+            // Isi form dengan data mahasiswa
+            editId.value = result.data.id;
+            editnpm.value = result.data.npm;
+            editNama.value = result.data.nama;
+            editProdi.value = result.data.program_studi;
+            editAngkatan.value = result.data.angkatan;
+            editEmail.value = result.data.email;
+
+            // Tampilkan modal
+            modalEdit.classList.add('active');
+
         } else {
             showAlert(result.message || 'Gagal memuat detail mahasiswa', 'danger');
         }
+
     } catch (err) {
         showAlert(`Kesalahan jaringan: ${err.message}`, 'danger');
     }
 }
 
+// Menutup Modal Edit
 function closeEditModal() {
-     // Percobaan 6-3 Langkah 4
-     
+
+    if (modalEdit) {
+        modalEdit.classList.remove('active');
+    }
 }
 
+// Menutup modal ketika area luar modal diklik
 if (modalEdit) {
     modalEdit.addEventListener('click', function (e) {
-        if (e.target === modalEdit) closeEditModal();
+
+        if (e.target === modalEdit) {
+            closeEditModal();
+        }
+
     });
 }
 
+// 5. Fetch API PUT: Memperbarui Data Mahasiswa
 if (formEdit) {
+
     formEdit.addEventListener('submit', async function (e) {
+
         e.preventDefault();
+
         const id = editId.value;
+
         const payload = {
             npm: editnpm.value.trim(),
             nama: editNama.value.trim(),
@@ -165,79 +223,159 @@ if (formEdit) {
         };
 
         try {
-             // Percobaan 6-3 Langkah 5
+            const res = await fetch(`${API_URL}?id=${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
 
             if (res.ok && data.status === 'success') {
-             // Percobaan 6-3 Langkah 6   
+
+                showAlert(data.message, 'success');
+
+                closeEditModal();
+
+                // Refresh data otomatis
+                loadMahasiswa();
+
             } else {
                 showAlert(data.message || 'Gagal memperbarui data', 'danger');
             }
+
         } catch (err) {
             showAlert(`Kesalahan jaringan: ${err.message}`, 'danger');
         }
+
     });
 }
 
-// 4. Fetch API POST: Menambahkan Data Baru Tanpa Reload
+// 6. Fetch API POST: Menambahkan Data Baru Tanpa Reload
 if (formTambah) {
+
     formTambah.addEventListener('submit', async function (event) {
-        // Percobaan 6-2 Langkah 3
+
         event.preventDefault();
 
         const dataMahasiswa = {
-            // Percobaan 6-2 Langkah 4
+
             npm: document.getElementById('npm').value.trim(),
+
             nama: document.getElementById('nama').value.trim(),
+
             program_studi: document.getElementById('program_studi').value.trim(),
-            angkatan: parseInt(document.getElementById('angkatan').value.trim(), 10),
+
+            angkatan: parseInt(
+                document.getElementById('angkatan').value.trim(),
+                10
+            ),
+
             email: document.getElementById('email').value.trim()
+
         };
 
         try {
-            // Percobaan 6-2 Langkah 5
+
             const response = await fetch(API_URL, {
+
                 method: 'POST',
-                headers: {'Content-Type' : 'application/json'},
+
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+
                 body: JSON.stringify(dataMahasiswa)
+
             });
 
             const result = await response.json();
-            
+
             if (response.ok && result.status === 'success') {
+
                 showAlert(result.message, 'success');
+
+                // Reset form
                 formTambah.reset();
-                loadMahasiswa(); // Refresh data otomatis
+
+                // Refresh data otomatis
+                loadMahasiswa();
+
             } else {
+
                 showAlert(result.message || 'Gagal menyimpan data', 'danger');
+
             }
+
         } catch (error) {
+
             showAlert(`Terjadi kesalahan koneksi: ${error.message}`, 'danger');
+
         }
+
     });
+
 }
 
-// 5. Fetch API DELETE: Menghapus Data Secara Asinkron
+// 7. Fetch API DELETE: Menghapus Data Secara Asinkron
 async function deleteMahasiswa(id, nama) {
-    // Percobaan 6-4 Langkah 2
-    
-    try {
-        // Percobaan 6-4 Langkah 3
-        
-        // Percobaan 6-4 Langkah 4
 
-        
-    } catch (error) {
-        showAlert(`Gagal menghapus: ${error.message}`, 'danger');
+    // Konfirmasi sebelum menghapus
+    if (!confirm(`Apakah Anda yakin ingin menghapus mahasiswa "${nama}"?`)) {
+        return;
     }
+
+    try {
+
+        const response = await fetch(`${API_URL}?id=${id}`, {
+
+            method: 'DELETE'
+
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === 'success') {
+
+            showAlert(result.message, 'success');
+
+            // Refresh data otomatis
+            loadMahasiswa();
+
+        } else {
+
+            showAlert(result.message || 'Gagal menghapus data', 'danger');
+
+        }
+
+    } catch (error) {
+
+        showAlert(`Gagal menghapus: ${error.message}`, 'danger');
+
+    }
+
 }
 
-// 6. Pencarian Real-Time (Live Search via Fetch API)
+// 8. Pencarian Real-Time (Live Search via Fetch API)
 if (inputSearch) {
+
     let timer = null;
+
     inputSearch.addEventListener('input', function () {
-    // Percobaan 6-4 Langkah 5
+
+        clearTimeout(timer);
+
+        timer = setTimeout(() => {
+
+            loadMahasiswa(inputSearch.value.trim());
+
+        }, 300);
 
     });
+
 }
 
-// Inisialisasi: Panggil Data Pertama Kali
+// 9. Inisialisasi: Panggil Data Pertama Kali
+loadMahasiswa();
